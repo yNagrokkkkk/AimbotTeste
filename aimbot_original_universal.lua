@@ -32,20 +32,7 @@ criarBotao("+ FOV", 160, function() fov = math.min(fov + 25, fovMax) end) criarB
 
 -- ESP local espBoxes = {} function atualizarESP() for _,v in pairs(espBoxes) do if v and v.Adornee then v:Destroy() end end table.clear(espBoxes)
 
-if not espAtivo then return end
-
-for _,plr in ipairs(Players:GetPlayers()) do
-if plr ~= LocalPlayer and plr.Character and plr.Character:FindFirstChild("HumanoidRootPart") then
-local box = Instance.new("BoxHandleAdornment")
-box.Size = Vector3.new(3,6,1)
-box.Color3 = Color3.new(1,0,0)
-box.AlwaysOnTop = true
-box.Adornee = plr.Character.HumanoidRootPart
-box.ZIndex = 5
-box.Parent = workspace
-table.insert(espBoxes, box)
-end
-end
+if not espAtivo then return end for _,plr in ipairs(Players:GetPlayers()) do if plr ~= LocalPlayer and plr.Character and plr.Character:FindFirstChild("HumanoidRootPart") then local box = Instance.new("BoxHandleAdornment") box.Size = Vector3.new(3,6,1) box.Color3 = Color3.new(1,0,0) box.AlwaysOnTop = true box.Adornee = plr.Character.HumanoidRootPart box.ZIndex = 5 box.Parent = workspace table.insert(espBoxes, box) end end 
 
 end
 
@@ -57,13 +44,9 @@ RunService.RenderStepped:Connect(atualizarESP)
 
 RunService.RenderStepped:Connect(function() fovCircle.Position = Vector2.new(Camera.ViewportSize.X/2, Camera.ViewportSize.Y/2) fovCircle.Radius = fov
 
-if aimbotAtivo and segurandoTiro then
-local alvo = obterAlvo()
-if alvo and alvo.Character and alvo.Character:FindFirstChild(alvoParte) then
-Camera.CFrame = CFrame.new(Camera.CFrame.Position, alvo.Character[alvoParte].Position)
-end
-end
+if aimbotAtivo and segurandoTiro then local alvo = obterAlvo() if alvo and alvo.Character and alvo.Character:FindFirstChild(alvoParte) then Camera.CFrame = CFrame.new(Camera.CFrame.Position, alvo.Character[alvoParte].Position) end end 
 
 end)
 
 aimbotBtn.Text = "Ativar Aimbot"
+
