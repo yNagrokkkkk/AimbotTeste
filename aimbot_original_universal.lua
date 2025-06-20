@@ -1,340 +1,440 @@
 -- Serviços
+
 local Players = game:GetService("Players")
+
 local RunService = game:GetService("RunService")
+
 local UserInputService = game:GetService("UserInputService")
+
 local Camera = workspace.CurrentCamera
+
 local LocalPlayer = Players.LocalPlayer
 
+
 -- Configurações
+
 local fov = 150
+
 local fovMin, fovMax = 50, 400
+
 local alvoParte = "Head"
+
 local aimbotAtivo = false
+
 local espAtivo = false
+
 local segurandoTiro = false
 
+local teamCheck = true
+
+
 -- GUI
+
 local playerGui = LocalPlayer:WaitForChild("PlayerGui")
+
 local screenGui = Instance.new("ScreenGui")
+
 screenGui.Name = "AimbotUniversalGUI"
+
 screenGui.ResetOnSpawn = false
+
 screenGui.Parent = playerGui
 
--- FRAME PRINCIPAL
-local mainFrame = Instance.new("Frame")
-mainFrame.Size = UDim2.new(0, 320, 0, 400)
-mainFrame.Position = UDim2.new(0, 50, 0, 50)
-mainFrame.BackgroundColor3 = Color3.fromRGB(0, 0, 0) -- preto
-mainFrame.BorderSizePixel = 2
-mainFrame.BorderColor3 = Color3.fromRGB(255, 0, 0) -- vermelho
-mainFrame.Parent = screenGui
 
--- Botão abrir/fechar menu
-local toggleBtn = Instance.new("TextButton")
-toggleBtn.Size = UDim2.new(0, 30, 0, 30)
-toggleBtn.Position = UDim2.new(1, -40, 0, 10)
-toggleBtn.BackgroundColor3 = Color3.fromRGB(255, 0, 0)
-toggleBtn.Text = "≡"
-toggleBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
-toggleBtn.Font = Enum.Font.GothamBold
-toggleBtn.Parent = mainFrame
+-- Menu principal com scroll
 
-toggleBtn.MouseButton1Click:Connect(function()
-    mainFrame.Visible = not mainFrame.Visible
-end)
-
--- Barra para arrastar o menu
-local dragBar = Instance.new("TextLabel")
-dragBar.Size = UDim2.new(1, 0, 0, 30)
-dragBar.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
-dragBar.Text = "by yNagrok - Clique e Arraste"
-dragBar.TextColor3 = Color3.fromRGB(255, 255, 255)
-dragBar.Font = Enum.Font.Gotham
-dragBar.Parent = mainFrame
-
--- Variáveis para drag
-local dragging, dragInput, dragStart, startPos
-
-dragBar.InputBegan:Connect(function(input)
-    if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
-        dragging = true
-        dragStart = input.Position
-        startPos = mainFrame.Position
-
-        input.Changed:Connect(function()
-            if input.UserInputState == Enum.UserInputState.End then
-                dragging = false
-            end
-        end)
-    end
-end)
-
-dragBar.InputChanged:Connect(function(input)
-    if input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch then
-        dragInput = input
-    end
-end)
-
-RunService.Heartbeat:Connect(function()
-    if dragging and dragInput then
-        local delta = dragInput.Position - dragStart
-        mainFrame.Position = UDim2.new(
-            startPos.X.Scale,
-            startPos.X.Offset + delta.X,
-            startPos.Y.Scale,
-            startPos.Y.Offset + delta.Y
-        )
-    end
-end)
-
--- Painéis e Scroll Frame
 local scrollFrame = Instance.new("ScrollingFrame")
-scrollFrame.Size = UDim2.new(1, -20, 1, -70)
-scrollFrame.Position = UDim2.new(0, 10, 0, 60)
-scrollFrame.CanvasSize = UDim2.new(0, 0, 0, 500)
-scrollFrame.ScrollBarThickness = 8
-scrollFrame.Parent = mainFrame
 
-local aimbotPanel = Instance.new("Frame")
-aimbotPanel.Size = UDim2.new(1, 0, 1, 0)
+scrollFrame.Size = UDim2.new(0, 320, 0, 400)
+
+scrollFrame.Position = UDim2.new(0, 50, 0, 50)
+
+scrollFrame.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+
+scrollFrame.BorderSizePixel = 2
+
+scrollFrame.BorderColor3 = Color3.fromRGB(255, 0, 0)
+
+scrollFrame.CanvasSize = UDim2.new(0, 0, 0, 600)
+
+scrollFrame.ScrollBarThickness = 6
+
+scrollFrame.Parent = screenGui
+
+
+-- Botão abrir/fechar
+
+local menuAberto = true
+
+local toggleMenuBtn = Instance.new("TextButton", screenGui)
+
+toggleMenuBtn.Size = UDim2.new(0, 120, 0, 30)
+
+toggleMenuBtn.Position = UDim2.new(1, -130, 0, 10)
+
+toggleMenuBtn.BackgroundColor3 = Color3.fromRGB(40,40,40)
+
+toggleMenuBtn.TextColor3 = Color3.new(1,1,1)
+
+toggleMenuBtn.Font = Enum.Font.GothamBold
+
+toggleMenuBtn.TextScaled = true
+
+toggleMenuBtn.Text = "Fechar Menu"
+
+
+toggleMenuBtn.MouseButton1Click:Connect(function()
+
+menuAberto = not menuAberto
+
+scrollFrame.Visible = menuAberto
+
+toggleMenuBtn.Text = menuAberto and "Fechar Menu" or "Abrir Menu"
+
+end)
+
+
+-- Barra de arrastar
+
+local dragBar = Instance.new("TextLabel", scrollFrame)
+
+dragBar.Size = UDim2.new(1,0,0,30)
+
+dragBar.BackgroundColor3 = Color3.fromRGB(30,30,30)
+
+dragBar.Text = "by yNagrok - Clique e Arraste"
+
+dragBar.TextColor3 = Color3.new(1,1,1)
+
+dragBar.Font = Enum.Font.Gotham
+
+
+dragBar.Active = true
+
+dragBar.Draggable = true
+
+
+-- Função botão padrão
+
+local function criarBotao(txt, parent, pos, callback)
+
+local btn = Instance.new("TextButton", parent)
+
+btn.Size = UDim2.new(0, 140, 0, 30)
+
+btn.Position = pos
+
+btn.BackgroundColor3 = Color3.fromRGB(50,50,50)
+
+btn.TextColor3 = Color3.new(1,1,1)
+
+btn.Font = Enum.Font.GothamBold
+
+btn.TextScaled = true
+
+btn.Text = txt
+
+btn.MouseButton1Click:Connect(callback)
+
+return btn
+
+end
+
+
+-- Abas
+
+local aimbotPanel = Instance.new("Frame", scrollFrame)
+
+aimbotPanel.Size = UDim2.new(1, -20, 0, 550)
+
+aimbotPanel.Position = UDim2.new(0, 10, 0, 40)
+
 aimbotPanel.BackgroundTransparency = 1
-aimbotPanel.Parent = scrollFrame
 
-local espPanel = Instance.new("Frame")
-espPanel.Size = UDim2.new(1, 0, 1, 0)
+
+local espPanel = Instance.new("Frame", scrollFrame)
+
+espPanel.Size = UDim2.new(1, -20, 0, 550)
+
+espPanel.Position = UDim2.new(0, 10, 0, 40)
+
 espPanel.BackgroundTransparency = 1
+
 espPanel.Visible = false
-espPanel.Parent = scrollFrame
 
--- Abas no topo
-local aimbotTab = Instance.new("TextButton")
-aimbotTab.Size = UDim2.new(0, 160, 0, 30)
-aimbotTab.Position = UDim2.new(0, 0, 0, 30)
-aimbotTab.BackgroundColor3 = Color3.fromRGB(70, 0, 0)
-aimbotTab.TextColor3 = Color3.fromRGB(255, 255, 255)
-aimbotTab.Font = Enum.Font.GothamBold
-aimbotTab.Text = "Aimbot"
-aimbotTab.Parent = mainFrame
 
-local espTab = Instance.new("TextButton")
-espTab.Size = UDim2.new(0, 160, 0, 30)
-espTab.Position = UDim2.new(0, 160, 0, 30)
-espTab.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
-espTab.TextColor3 = Color3.fromRGB(255, 255, 255)
-espTab.Font = Enum.Font.GothamBold
-espTab.Text = "ESP"
-espTab.Parent = mainFrame
+local aimbotTab = criarBotao("Aimbot", scrollFrame, UDim2.new(0, 10, 0, 5), function()
 
--- Função para mudar abas
-local function ativarAba(aba)
-    if aba == "aimbot" then
-        aimbotPanel.Visible = true
-        espPanel.Visible = false
-        aimbotTab.BackgroundColor3 = Color3.fromRGB(70, 0, 0)
-        espTab.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
-        scrollFrame.CanvasSize = UDim2.new(0, 0, 0, 350)
-    else
-        aimbotPanel.Visible = false
-        espPanel.Visible = true
-        aimbotTab.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
-        espTab.BackgroundColor3 = Color3.fromRGB(70, 0, 0)
-        scrollFrame.CanvasSize = UDim2.new(0, 0, 0, 100)
-    end
-end
+aimbotPanel.Visible = true
 
-aimbotTab.MouseButton1Click:Connect(function()
-    ativarAba("aimbot")
+espPanel.Visible = false
+
 end)
 
-espTab.MouseButton1Click:Connect(function()
-    ativarAba("esp")
+
+local espTab = criarBotao("ESP", scrollFrame, UDim2.new(0, 170, 0, 5), function()
+
+aimbotPanel.Visible = false
+
+espPanel.Visible = true
+
 end)
 
-ativarAba("aimbot")
 
--- Funções para criar botões e labels
-local function criarBotao(texto, parent, posY, callback)
-    local btn = Instance.new("TextButton")
-    btn.Size = UDim2.new(0, 280, 0, 30)
-    btn.Position = UDim2.new(0, 0, 0, posY)
-    btn.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
-    btn.TextColor3 = Color3.fromRGB(255, 255, 255)
-    btn.Font = Enum.Font.GothamBold
-    btn.Text = texto
-    btn.TextScaled = true
-    btn.Parent = parent
-    btn.MouseButton1Click:Connect(callback)
-    return btn
-end
+-- Botões AIMBOT
 
-local function criarLabel(texto, parent, posY)
-    local label = Instance.new("TextLabel")
-    label.Size = UDim2.new(0, 280, 0, 25)
-    label.Position = UDim2.new(0, 0, 0, posY)
-    label.BackgroundTransparency = 1
-    label.TextColor3 = Color3.fromRGB(255, 255, 255)
-    label.Font = Enum.Font.Gotham
-    label.Text = texto
-    label.TextScaled = true
-    label.TextXAlignment = Enum.TextXAlignment.Left
-    label.Parent = parent
-    return label
-end
+local aimbotBtn = criarBotao("Aimbot: Desativado", aimbotPanel, UDim2.new(0, 0, 0, 10), function()
 
--- Variáveis do painel Aimbot
-local aimbotToggleBtn = criarBotao("Aimbot: Desativado", aimbotPanel, 10, function()
-    aimbotAtivo = not aimbotAtivo
-    aimbotToggleBtn.Text = "Aimbot: " .. (aimbotAtivo and "Ativado" or "Desativado")
+aimbotAtivo = not aimbotAtivo
+
+aimbotBtn.BackgroundColor3 = aimbotAtivo and Color3.fromRGB(0,200,0) or Color3.fromRGB(200,0,0)
+
+aimbotBtn.Text = "Aimbot: "    .. (aimbotAtivo    and "Ativado" or "Desativado")
+
 end)
 
-local fovLabel = criarLabel("FOV: " .. fov, aimbotPanel, 60)
+aimbotBtn.BackgroundColor3 = Color3.fromRGB(200,0,0)
 
-local fovUpBtn = criarBotao("+ FOV", aimbotPanel, 100, function()
-    fov = math.min(fov + 25, fovMax)
-    fovLabel.Text = "FOV: " .. fov
+
+local fovLabel = Instance.new("TextLabel", aimbotPanel)
+
+fovLabel.Size = UDim2.new(1, 0, 0, 25)
+
+fovLabel.Position = UDim2.new(0, 0, 0, 50)
+
+fovLabel.BackgroundTransparency = 1
+
+fovLabel.TextColor3 = Color3.new(1,1,1)
+
+fovLabel.Font = Enum.Font.Gotham
+
+fovLabel.Text = "FOV: " .. fov
+
+fovLabel.TextScaled = true
+
+
+criarBotao("+ FOV", aimbotPanel, UDim2.new(0, 0, 0, 80), function()
+
+fov = math.min(fov + 25, fovMax)
+
+fovLabel.Text = "FOV: " .. fov
+
 end)
 
-local fovDownBtn = criarBotao("- FOV", aimbotPanel, 140, function()
-    fov = math.max(fov - 25, fovMin)
-    fovLabel.Text = "FOV: " .. fov
+
+criarBotao("- FOV", aimbotPanel, UDim2.new(0, 150, 0, 80), function()
+
+fov = math.max(fov - 25, fovMin)
+
+fovLabel.Text = "FOV: " .. fov
+
 end)
 
-local alvoLabel = criarLabel("Parte para mirar: " .. alvoParte, aimbotPanel, 190)
+
+-- Seleção parte mirar
+
+local alvoLabel = Instance.new("TextLabel", aimbotPanel)
+
+alvoLabel.Size = UDim2.new(1,0,0,25)
+
+alvoLabel.Position = UDim2.new(0,0,0,120)
+
+alvoLabel.BackgroundTransparency = 1
+
+alvoLabel.TextColor3 = Color3.new(1,1,1)
+
+alvoLabel.Font = Enum.Font.Gotham
+
+alvoLabel.Text = "Parte: "..alvoParte
+
+alvoLabel.TextScaled = true
+
 
 local function mudarAlvo(parte)
-    alvoParte = parte
-    alvoLabel.Text = "Parte para mirar: " .. alvoParte
+
+alvoParte = parte
+
+alvoLabel.Text = "Parte: "..alvoParte
+
 end
 
-local botaoCabeca = criarBotao("Cabeça", aimbotPanel, 230, function()
-    mudarAlvo("Head")
+
+criarBotao("Cabeça", aimbotPanel, UDim2.new(0,0,0,150), function()
+
+mudarAlvo("Head")
+
 end)
 
-local botaoPeito = criarBotao("Peito", aimbotPanel, 270, function()
-    mudarAlvo("HumanoidRootPart")
+criarBotao("Peito", aimbotPanel, UDim2.new(0,0,0,180), function()
+
+mudarAlvo("HumanoidRootPart")
+
 end)
 
-local botaoPerna = criarBotao("Perna", aimbotPanel, 310, function()
-    mudarAlvo("LeftLeg")
+criarBotao("Perna", aimbotPanel, UDim2.new(0,0,0,210), function()
+
+mudarAlvo("LeftLeg")
+
 end)
 
--- Variáveis do painel ESP
-local espToggleBtn = criarBotao("ESP: Desativado", espPanel, 10, function()
-    espAtivo = not espAtivo
-    espToggleBtn.Text = "ESP: " .. (espAtivo and "Ativado" or "Desativado")
+
+-- Botão ESP
+
+local espBtn = criarBotao("ESP: Desativado", espPanel, UDim2.new(0, 0, 0, 10), function()
+
+espAtivo = not  espAtivo
+
+espBtn.BackgroundColor3 = espAtivo and Color3.fromRGB(0,200,0) or Color3.fromRGB(200,0,0)
+
+espBtn.Text = "ESP: " .. (espAtivo and "Ativado" or "Desativado")
+
 end)
 
--- Controlar disparo (mouse e touch)
+espBtn.BackgroundColor3 = Color3.fromRGB(200,0,0)
+
+
+-- Input tiro
+
 UserInputService.InputBegan:Connect(function(input)
-    if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
-        segurandoTiro = true
-    end
+
+if input.UserInputType == Enum.UserInputType.MouseButton1 then
+
+segurandoTiro = true
+
+end
+
 end)
 
 UserInputService.InputEnded:Connect(function(input)
-    if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
-        segurandoTiro = false
-    end
+
+if input.UserInputType == Enum.UserInputType.MouseButton1 then
+
+segurandoTiro = false
+
+end
+
 end)
 
--- Função para checar se player é inimigo (team check)
-local function isEnemy(player)
-    if not player.Team or not LocalPlayer.Team then return true end
-    return player.Team ~= LocalPlayer.Team
+
+-- Função obter alvo
+
+local function  obterAlvo()
+
+local alvo, menorDist = nil, fov
+
+for _, plr in ipairs(Players:GetPlayers()) do
+
+if plr ~= LocalPlayer and plr.Team ~= LocalPlayer.Team and plr.Character and plr.Character:FindFirstChild("Humanoid") and plr.Character.Humanoid.Health > 0 then
+
+local parte = plr.Character:FindFirstChild(alvoParte)
+
+if parte then
+
+local pos, naTela = Camera:WorldToViewportPoint(parte.Position)
+
+if naTela then
+
+local dist = (Vector2.new(pos.X, pos.Y) - Vector2.new(Camera.ViewportSize.X/2, Camera.ViewportSize.Y/2)).Magnitude
+
+if dist < menorDist then
+
+alvo, menorDist = plr, dist
+
 end
 
--- Obter alvo dentro do FOV e que seja inimigo
-local function obterAlvo()
-    local alvo, menorDist = nil, math.huge
-    local center = Vector2.new(Camera.ViewportSize.X / 2, Camera.ViewportSize.Y / 2)
-    for _, plr in ipairs(Players:GetPlayers()) do
-        if plr ~= LocalPlayer and plr.Character and plr.Character:FindFirstChild("Humanoid") and plr.Character.Humanoid.Health > 0 then
-            if isEnemy(plr) then
-                local parte = plr.Character:FindFirstChild(alvoParte)
-                if parte then
-                    local pos, naTela = Camera:WorldToViewportPoint(parte.Position)
-                    if naTela then
-                        local dist = (Vector2.new(pos.X, pos.Y) - center).Magnitude
-                        if dist < menorDist and dist <= fov then
-                            alvo = plr
-                            menorDist = dist
-                        end
-                    end
-                end
-            end
-        end
-    end
-    return alvo
 end
 
--- Círculo FOV visual
+end
+
+end
+
+end
+
+return    alvo  
+
+end
+
+
+-- FOV círculo
+
 local fovCircle = Drawing.new("Circle")
+
 fovCircle.Visible = true
-fovCircle.Color = Color3.fromRGB(255, 0, 0) -- vermelho
+
+fovCircle.Color = Color3.fromRGB(255,0,0)
+
 fovCircle.Thickness = 2
+
 fovCircle.Filled = false
 
+
 RunService.RenderStepped:Connect(function()
-    fovCircle.Position = Vector2.new(Camera.ViewportSize.X / 2, Camera.ViewportSize.Y / 2)
-    fovCircle.Radius = fov
 
-    if aimbotAtivo and segurandoTiro then
-        local alvo = obterAlvo()
-        if alvo and alvo.Character and alvo.Character:FindFirstChild(alvoParte) then
-            Camera.CFrame = CFrame.new(Camera.CFrame.Position, alvo.Character[alvoParte].Position)
-        end
-    end
-end)
+fovCircle.Position = Vector2.new(Camera.ViewportSize.X/2, Camera.ViewportSize.Y/2)
 
--- ESP com BoxHandleAdornment (bordas)
-local espBoxes = {}
+fovCircle.Radius = fov
 
-local function criarOuAtualizarESP()
-    for _, plr in ipairs(Players:GetPlayers()) do
-        if plr ~= LocalPlayer and plr.Character and plr.Character:FindFirstChild("HumanoidRootPart") and plr.Character.Humanoid.Health > 0 then
-            if isEnemy(plr) then
-                if not espBoxes[plr] then
-                    local box = Instance.new("BoxHandleAdornment")
-                    box.Size = Vector3.new(3, 6, 1)
-                    box.Color3 = Color3.new(1, 0, 0)
-                    box.AlwaysOnTop = true
-                    box.Adornee = plr.Character.HumanoidRootPart
-                    box.ZIndex = 5
-                    box.Parent = workspace
-                    espBoxes[plr] = box
-                else
-                    espBoxes[plr].Adornee = plr.Character.HumanoidRootPart
-                end
-            else
-                if espBoxes[plr] then
-                    espBoxes[plr]:Destroy()
-                    espBoxes[plr] = nil
-                end
-            end
-        else
-            if espBoxes[plr] then
-                espBoxes[plr]:Destroy()
-                espBoxes[plr] = nil
-            end
-        end
-    end
+if aimbotAtivo and   segurandoTiro   then
 
-    -- Remove boxes de jogadores que saíram
-    for plr, box in pairs(espBoxes) do
-        if not table.find(Players:GetPlayers(), plr) then
-            box:Destroy()
-            espBoxes[plr] = nil
-        end
-    end
+    alvo = obterAlvo()  
+
+if   alvo   and alvo.Character and alvo.Character:FindFirstChild(alvoParte) then
+
+Camera.CFrame = CFrame.new(Camera.CFrame.Position, alvo.Character[alvoParte].Position)
+
 end
 
-RunService.RenderStepped:Connect(function()
-    if espAtivo then
-        criarOuAtualizarESP()
-    else
-        for _, box in pairs(espBoxes) do
-            box:Destroy()
-        end
-        espBoxes = {}
-    end
+end
+
 end)
+
+
+-- ESP borda
+
+local espBoxes = {}
+
+local function   atualizarESP() 
+
+for _, box in pairs(espBoxes) do
+
+if box then box:Destroy() end
+
+end
+
+table.clear(espBoxes)
+
+
+if not   espAtivo   then return end
+
+
+for _, plr in ipairs(Players:GetPlayers()) do
+
+if plr ~= LocalPlayer and plr.Team ~= LocalPlayer.Team and plr.Character and plr.Character:FindFirstChild("HumanoidRootPart") then
+
+local box = Instance.new("BoxHandleAdornment")
+
+box.Size = Vector3.new(3,6,1)
+
+box.Color3 = Color3.new(1,0,0)
+
+box.Transparency = 1
+
+box.AlwaysOnTop = true
+
+box.ZIndex = 5
+
+box.Adornee = plr.Character.HumanoidRootPart
+
+-- Configurações
+
+FOV local = 150
+
+end
+
+end
+
+end
+
+
+RunService.RenderStepped:Connect(atualizarESP)
+
